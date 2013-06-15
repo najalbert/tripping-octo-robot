@@ -4,8 +4,12 @@ import time
 import shutil
 import multiprocessing
 import Queue
+from datetime import datetime
 
+
+CONVERSION_SIGIL_NAME = 'conversion-done'
 WORKER_COUNT = 4
+IMAGE_DIR_NAME = 'images'
 
 def main():
     if not pdftocairo_is_installed():
@@ -50,18 +54,24 @@ def worker_main(worker_id, print_lock, work_queue):
 
 def add_pdfs_to_work_queue(full_path, work_queue):
     file_names = os.listdir(full_path)
-    pdf_files = [ os.path.join(full_path, file_name) for file_name in file_names
+    pdf_files = [ file_name for file_name in file_names
                   if file_name.endswith('.pdf') ]
     if len(pdf_files) == 0:
         print 'Skipping %s; no PDFs found.' % full_path
         return
     for file_name in pdf_files:
-        print 'Adding %s to the work queue.' % file_name
-        work_queue.put(file_name)
+        sigil = os.path.join(full_path, IMAGE_DIR_NAME, file_name, CONVERSION_SIGIL_NAME)
+        pdf_full_path = os.path.join(full_path, file_name)
+        if os.path.isfile(sigil):
+            print 'Skipping conversion of %s.  Remove file %s to re-convert' % (pdf_full_path, sigil)
+            continue
+        print 'Adding %s to the work queue.' % pdf_full_path
+        work_queue.put(pdf_full_path)
 
 def worker_split_pdf(logger, full_path):
     even_dir, odd_dir = make_image_directories(full_path)
     _split_pdf(logger, full_path, even_dir, odd_dir)
+    _install_conversion_sigil(even_path)
 
 def pdftocairo_is_installed():
     with open('/dev/null') as devnull:
@@ -74,8 +84,8 @@ def pdftocairo_is_installed():
 
 def make_image_directories(full_path):
     path, file_name = os.path.split(full_path)
-    even_dir = os.path.join(path, 'images', file_name, 'even-pages')
-    odd_dir = os.path.join(path, 'images', file_name, 'odd-pages')
+    even_dir = os.path.join(path, IMAGE_DIR_NAME, file_name, 'even-pages')
+    odd_dir = os.path.join(path, IMAGE_DIR_NAME, file_name, 'odd-pages')
     for directory in [even_dir, odd_dir]:
         try:
             os.makedirs(directory)
@@ -96,6 +106,14 @@ def _split_pdf(logger, file_path, even_dir, odd_dir):
     total_time = time.time() - start
     if total_time > 0:
         logger.log('\tFinished splitting %s in %.02f seconds (%0.02f MB/sec)' % (file_path, total_time, size_mb/total_time))
+
+def _install_conversion_sigil(even_path):
+    '''Create file in images directory to signify successful conversion'''
+    images_path, even_dir = os.path.split(even_path)
+    sigil = os.path.join(images_path, CONVERSION_SIGIL_NAME)
+    fout = open(sigil, 'w')
+    fout.write('PDF to PNG conversion finished %s' % datetime.now())
+    fout.close()
 
 def sort_files(file_path, even_dir, odd_dir):
     split_files = sorted(os.listdir(even_dir))
