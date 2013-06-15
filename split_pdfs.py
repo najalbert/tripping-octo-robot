@@ -15,7 +15,6 @@ def main():
         if os.path.isdir(full_path):
             split_pdfs_in_directory(full_path)
 
-
 def split_pdfs_in_directory(full_path):
     file_names = os.listdir(full_path)
     pdf_files = [ file_name for file_name in file_names
@@ -24,8 +23,8 @@ def split_pdfs_in_directory(full_path):
         print 'Skipping %s; no PDFs found.' % full_path
         return
     print 'Converting directory %s.' % full_path
-    even_dir, odd_dir = make_image_directories(full_path)
     for file_name in pdf_files:
+        even_dir, odd_dir = make_image_directories(full_path, file_name)
         full_file_path = os.path.join(full_path, file_name)
         split_pdf(full_file_path, even_dir, odd_dir)
 
@@ -38,9 +37,9 @@ def pdftocairo_is_installed():
             return False
     return True
 
-def make_image_directories(full_path):
-    even_dir = os.path.join(full_path, IMAGE_EVENS)
-    odd_dir = os.path.join(full_path, IMAGE_ODDS)
+def make_image_directories(full_path, file_name):
+    even_dir = os.path.join(full_path, file_name, IMAGE_EVENS)
+    odd_dir = os.path.join(full_path, file_name, IMAGE_ODDS)
     for directory in [even_dir, odd_dir]:
         try:
             os.makedirs(directory)
