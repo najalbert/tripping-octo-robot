@@ -63,7 +63,7 @@ def add_pdfs_to_work_queue(full_path, work_queue):
         sigil = os.path.join(full_path, IMAGE_DIR_NAME, file_name, CONVERSION_SIGIL_NAME)
         pdf_full_path = os.path.join(full_path, file_name)
         if os.path.isfile(sigil):
-            print 'Skipping conversion of %s.  Remove file %s to re-convert' % (pdf_full_path, sigil)
+            print 'Skipping conversion of %s.  Remove file %s to re-convert.' % (pdf_full_path, sigil)
             continue
         print 'Adding %s to the work queue.' % pdf_full_path
         work_queue.put(pdf_full_path)
@@ -71,7 +71,7 @@ def add_pdfs_to_work_queue(full_path, work_queue):
 def worker_split_pdf(logger, full_path):
     even_dir, odd_dir = make_image_directories(full_path)
     _split_pdf(logger, full_path, even_dir, odd_dir)
-    _install_conversion_sigil(even_path)
+    _install_conversion_sigil(even_dir)
 
 def pdftocairo_is_installed():
     with open('/dev/null') as devnull:
@@ -107,9 +107,9 @@ def _split_pdf(logger, file_path, even_dir, odd_dir):
     if total_time > 0:
         logger.log('\tFinished splitting %s in %.02f seconds (%0.02f MB/sec)' % (file_path, total_time, size_mb/total_time))
 
-def _install_conversion_sigil(even_path):
+def _install_conversion_sigil(even_dir):
     '''Create file in images directory to signify successful conversion'''
-    images_path, even_dir = os.path.split(even_path)
+    images_path, even_dir = os.path.split(even_dir)
     sigil = os.path.join(images_path, CONVERSION_SIGIL_NAME)
     fout = open(sigil, 'w')
     fout.write('PDF to PNG conversion finished %s' % datetime.now())
