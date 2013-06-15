@@ -1,6 +1,7 @@
 # Purpose
 
-This script splits apart a bunch of large PDF files.  Mulitprocessedly.  Uses pdftocairo for high quality conversion.
+This script splits apart a bunch of large PDF files.  Mulitprocessedly.  Uses
+pdftocairo for high quality conversion.
 
 
 # Directory Structure
@@ -32,6 +33,7 @@ _
      \_ pdfB.pdf
      \_ images
         \_ pdfA.pdf
+           \_ conversion-done
            \_ even-pages
               \_ pdfA.pdf-page-2.png
               \_ pdfA.pdf-page-4.png
@@ -39,6 +41,7 @@ _
               \_ pdfA.pdf-page-1.png
               \_ pdfA.pdf-page-3.png
         \_ pdfB.pdf
+           \_ conversion-done
            \_ even-pages
               \_ pdfB.pdf-page-2.png
               \_ pdfB.pdf-page-4.png
@@ -50,11 +53,17 @@ _
      \_ randomFile.txt
      \_ images
         \_ pdfC.pdf
+           \_ conversion-done
            \_ even-pages
               \_ pdfC.pdf-page-2.png
               \_ pdfC.pdf-page-4.png
            \_ odd-pages
               \_ pdfC.pdf-page-2.png
               \_ pdfC.pdf-page-4.png
-     
 ```
+
+Note that once a PDF file is successfully converted, the ```conversion-done```
+sigil file is created in its images directory.  On rerun of
+```split_pdfs.py```, PDF files with a corresponding ```conversion-done``` sigil
+will be ignored.  Simply remove the ```conversion-done``` sigil file to
+reconvert the PDF file.
