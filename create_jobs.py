@@ -24,6 +24,7 @@ def upload_images_to_job(full_path):
         return
     upload_tracker = UploadTracker(full_path)
     upload_tracker.create_captricity_job()
+    upload_tracker.print_job_info()
     upload_tracker.continue_uploads()
 
 def _all_pdfs_converted(full_path):
@@ -85,6 +86,9 @@ class UploadTracker(object):
         self.data[self.JOB_ID_KEY] = job.get('id')
         self.save()
 
+    def print_job_info(self):
+        print 'Uploading to "%s" (https://shreddr.captricity.com/admin/shreddr/job/%s/)' % (self.job_name, self.job_id)
+
     def _update_job_name(self, name):
         self.client.update_job(self.job_id, {'name': name})
 
@@ -98,6 +102,7 @@ class UploadTracker(object):
             if iset_name not in existing_isets:
                 iset = self.client.create_instance_sets(self.job_id, {'name':iset_name})
                 iset_id = iset['id']
+                print 'Uploading %s to Job %s as InstanceSet %s (https://shreddr.captricity.com/admin/shreddr/instanceset/%s/)' % (image_path, self.job_id, iset_name, iset_id)
                 assert len(self.client.read_instance_set_instances(iset_id)) == 0
                 instance_data = {'page_number':'0', 'image_file':open(image_path, 'rb')}
                 self.client.create_instance_set_instances(iset_id, instance_data)
