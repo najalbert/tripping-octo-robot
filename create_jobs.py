@@ -55,14 +55,18 @@ class UploadTracker(object):
 
     # Lists of files to ignore when doing file size sanity checks.
     # These are mostly the "bad" page 1s
-    FILE_SKIP_LIST = [
+    FILE_SIZE_SKIP_LIST = [
+            # Baringo (different version p1s)
             '/Users/nickj/IPA-data/Baringo/images/160_Baringo South_A.pdf/odd-pages/160_Baringo South_A.pdf-page-133.png',
             '/Users/nickj/IPA-data/Baringo/images/160_Baringo South_A.pdf/odd-pages/160_Baringo South_A.pdf-page-093.png',
             '/Users/nickj/IPA-data/Baringo/images/160_Baringo South_A.pdf/odd-pages/160_Baringo South_A.pdf-page-017.png',
             '/Users/nickj/IPA-data/Baringo/images/160_Baringo South_B.pdf/odd-pages/160_Baringo South_B.pdf-page-119.png',
             '/Users/nickj/IPA-data/Baringo/images/160_Baringo South_B.pdf/odd-pages/160_Baringo South_B.pdf-page-057.png',
             '/Users/nickj/IPA-data/Baringo/images/160_Baringo South_B.pdf/odd-pages/160_Baringo South_B.pdf-page-059.png',
-            '/Users/nickj/IPA-data/Baringo/images/160_Baringo South_B.pdf/odd-pages/160_Baringo South_B.pdf-page-003.png'
+            '/Users/nickj/IPA-data/Baringo/images/160_Baringo South_B.pdf/odd-pages/160_Baringo South_B.pdf-page-003.png',
+            # Bomet (really big p2)
+            '/Users/nickj/IPA-data/Bomet/images/196_Bomet East.pdf/even-pages/196_Bomet East.pdf-page-072.png',
+            '/Users/nickj/IPA-data/Bomet/images/198_Konoin.pdf/even-pages/198_Konoin.pdf-page-058.png',
     ]
 
     def __init__(self, full_path):
@@ -224,8 +228,8 @@ class UploadTracker(object):
         odd_files = [os.path.join(pdf_images_path, 'odd-pages', f) for f in odd_files]
         if len(odd_files) == 0 or len(even_files) == 0:
             return []
-        even_file_sizes = [os.path.getsize(f) for f in even_files if f not in self.FILE_SKIP_LIST]
-        odd_file_sizes = [os.path.getsize(f) for f in odd_files if f not in self.FILE_SKIP_LIST]
+        even_file_sizes = [os.path.getsize(f) for f in even_files if f not in self.FILE_SIZE_SKIP_LIST]
+        odd_file_sizes = [os.path.getsize(f) for f in odd_files if f not in self.FILE_SIZE_SKIP_LIST]
         avg_even_size = float(sum(even_file_sizes))/len(even_file_sizes)
         avg_odd_size = float(sum(odd_file_sizes))/len(odd_file_sizes)
         if avg_even_size > avg_odd_size:
