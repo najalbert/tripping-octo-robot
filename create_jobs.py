@@ -52,6 +52,18 @@ class UploadTracker(object):
             '/Users/nickj/IPA-data/Baringo/158_Baringo North_A.pdf':152 # Starts with an extra page 2
     }
 
+    # Lists of files to ignore when doing file size sanity checks.
+    # These are mostly the "bad" page 1s
+    FILE_SKIP_LIST = [
+            '/Users/nickj/IPA-data/Baringo/images/160_Baringo South_A.pdf/odd-pages/160_Baringo South_A.pdf-page-133.png',
+            '/Users/nickj/IPA-data/Baringo/images/160_Baringo South_A.pdf/odd-pages/160_Baringo South_A.pdf-page-093.png',
+            '/Users/nickj/IPA-data/Baringo/images/160_Baringo South_A.pdf/odd-pages/160_Baringo South_A.pdf-page-017.png',
+            '/Users/nickj/IPA-data/Baringo/images/160_Baringo South_B.pdf/odd-pages/160_Baringo South_B.pdf-page-119.png',
+            '/Users/nickj/IPA-data/Baringo/images/160_Baringo South_B.pdf/odd-pages/160_Baringo South_B.pdf-page-057.png',
+            '/Users/nickj/IPA-data/Baringo/images/160_Baringo South_B.pdf/odd-pages/160_Baringo South_B.pdf-page-059.png',
+            '/Users/nickj/IPA-data/Baringo/images/160_Baringo South_B.pdf/odd-pages/160_Baringo South_B.pdf-page-003.png'
+    ]
+
     def __init__(self, full_path):
         self.full_path = full_path
         if os.path.isfile(self.upload_tracker_file):
@@ -210,14 +222,19 @@ class UploadTracker(object):
         odd_files = [os.path.join(pdf_images_path, 'odd-pages', f) for f in odd_files]
         if len(odd_files) == 0 or len(even_files) == 0:
             return []
-        even_file_sizes = [os.path.getsize(f) for f in even_files]
-        odd_file_sizes = [os.path.getsize(f) for f in odd_files]
-        FUDGE_FACTOR = 50000 # expect 50kb avg difference, otherwise raise error
+        even_file_sizes = [os.path.getsize(f) for f in even_files if f not in self.FILE_SKIP_LIST]
+        odd_file_sizes = [os.path.getsize(f) for f in odd_files if f not in self.FILE_SKIP_LIST]
         avg_even_size = float(sum(even_file_sizes))/len(even_file_sizes)
         avg_odd_size = float(sum(odd_file_sizes))/len(odd_file_sizes)
-        if avg_even_size - FUDGE_FACTOR > avg_odd_size:
+        if avg_even_size > avg_odd_size:
+            # Should be atleast 512kb different between smallest first page and largest second
+            # See Baringo/161_Mogotio_A.pdf missort
+            assert min(even_file_sizes) > (max(odd_file_sizes) + 2**19), 'Suspect size differential: %s' % even_dir
             return even_files
-        elif avg_odd_size - FUDGE_FACTOR > avg_even_size:
+        elif avg_odd_size > avg_even_size:
+            # Should be atleast 512kb different between smallest first page and largest second
+            # See Baringo/161_Mogotio_A.pdf missort
+            assert min(odd_file_sizes) > (max(even_file_sizes) + 2**19), 'Suspect size differential: %s' % odd_dir
             return odd_files
         raise Exception('Could not distinguish files: %s' % pdf_images_path)
 
