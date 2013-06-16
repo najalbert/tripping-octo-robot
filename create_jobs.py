@@ -49,7 +49,8 @@ class UploadTracker(object):
     UPLOADS_DONE_NAME = 'captricity-upload-done'
     # For messed up scans, specify the page count for sanity checks
     ODD_PDFS = {
-            '/Users/nickj/IPA-data/Baringo/158_Baringo North_A.pdf':152 # Starts with an extra page 2
+            '/Users/nickj/IPA-data/Baringo/158_Baringo North_A.pdf': 152, # Starts with an extra page 2
+            '/Users/nickj/IPA-data/Baringo/161_Mogotio_A.pdf': 64 # Starts with an extra p2, 27 and 28 are p2s
     }
 
     # Lists of files to ignore when doing file size sanity checks.
