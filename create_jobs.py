@@ -47,6 +47,10 @@ class UploadTracker(object):
     UPLOADED_INSTANCES_KEY = 'uploaded_instances'
     DOCUMENT_ID = '10145'
     UPLOADS_DONE_NAME = 'captricity-upload-done'
+    # For messed up scans, specify the page count for sanity checks
+    ODD_PDFS = {
+            '/Users/nickj/IPA-data/Baringo/158_Baringo North_A.pdf':152 # Starts with an extra page 2
+    }
 
     def __init__(self, full_path):
         self.full_path = full_path
@@ -98,7 +102,7 @@ class UploadTracker(object):
         self.save()
 
     def print_job_info(self):
-        print 'Uploading to "%s" (https://shreddr.captricity.com/admin/shreddr/job/%s/)' % (self.job_name, self.job_id)
+        print 'Uploading %s pages to to "%s" (https://shreddr.captricity.com/admin/shreddr/job/%s/)' % (self._get_total_pdf_page_count()/2, self.job_name, self.job_id)
 
     def print_finished_upload_info(self):
         uploaded_isets = self.client.read_instance_sets(self.job_id)
@@ -169,6 +173,8 @@ class UploadTracker(object):
                 num_pages = int(num_pages_str)
                 break
         assert num_pages is not None
+        if num_pages % 2 != 0:
+            num_pages = self.ODD_PDFS[pdf_file_path]
         return num_pages
 
     def _get_next_image_upload_path(self):
