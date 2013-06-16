@@ -48,7 +48,7 @@ class UploadTracker(object):
     DOCUMENT_ID = '10145'
     UPLOADS_DONE_NAME = 'captricity-upload-done'
     # For messed up scans, specify the page count for sanity checks
-    ODD_PDFS = {
+    MODIFIED_PDF_PAGE_COUNTS = {
             '/Users/nickj/IPA-data/Baringo/158_Baringo North_A.pdf': 152, # Starts with an extra page 2
             '/Users/nickj/IPA-data/Baringo/161_Mogotio_A.pdf': 64 # Starts with an extra p2, 27 and 28 are p2s
     }
@@ -191,9 +191,10 @@ class UploadTracker(object):
                 num_pages = int(num_pages_str)
                 break
         assert num_pages is not None
+        # PDFs with an odd number of pages *must* be in MODIFIED_PDF_PAGE_COUNTS
         if num_pages % 2 != 0:
-            num_pages = self.ODD_PDFS[pdf_file_path]
-        return num_pages
+            num_pages = self.MODIFIED_PDF_PAGE_COUNTS[pdf_file_path]
+        return self.MODIFIED_PDF_PAGE_COUNTS.get(pdf_file_path, num_pages)
 
     def _get_next_image_upload_path(self):
         all_image_paths = self._get_all_image_full_paths()
