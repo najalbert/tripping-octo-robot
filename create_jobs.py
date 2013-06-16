@@ -7,20 +7,23 @@ import pickle
 
 # You'll need to install the Captricity API client
 # https://github.com/Captricity/captools
-from captricity.api import Client
+from captools.api import Client
 
 def main():
     working_dir = os.getcwd()
     for file_name in os.listdir(working_dir):
-        full_path = os.path.join(working_dir, file_name, 'images')
+        full_path = os.path.join(working_dir, file_name)
         if not os.path.isdir(full_path):
-            print 'Skipping %s.  No images directory.' % os.path.join(working_dir, file_name)
             continue
-        upload_images_to_job(full_path)
+        full_images_path = os.path.join(full_path, 'images')
+        if not os.path.isdir(full_images_path):
+            print 'Skipping %s.  No images directory.' % full_path
+            continue
+        upload_images_to_job(full_images_path)
 
 def upload_images_to_job(full_path):
     if not _all_pdfs_converted(full_path):
-        print 'Folder %s has not finished PDF conversion, skipping!'
+        print 'Folder %s has not finished PDF conversion, skipping!' % full_path
         return
     upload_tracker = UploadTracker(full_path)
     upload_tracker.create_captricity_job()
@@ -28,7 +31,13 @@ def upload_images_to_job(full_path):
     upload_tracker.continue_uploads()
 
 def _all_pdfs_converted(full_path):
-    return os.path.isfile(os.path.join(full_path, 'conversion-done'))
+    for pdf_file_name in os.listdir(full_path):
+        if not os.path.isdir(os.path.join(full_path, pdf_file_name)):
+            continue
+        conversion_sigil = os.path.join(full_path, pdf_file_name, 'conversion-done')
+        if not os.path.isfile(conversion_sigil):
+            return False
+    return True
 
 class UploadTracker(object):
     UPLOAD_TRACKER_NAME = 'captricity-upload-status'
