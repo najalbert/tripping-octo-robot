@@ -105,6 +105,8 @@ class UploadTracker(object):
         print 'Uploading %s pages to to "%s" (https://shreddr.captricity.com/admin/shreddr/job/%s/)' % (self._get_total_pdf_page_count()/2, self.job_name, self.job_id)
 
     def print_finished_upload_info(self):
+        print '\tSanity check URLs:'
+        self._get_total_pdf_page_count(sanity=True)
         uploaded_isets = self.client.read_instance_sets(self.job_id)
         print 'Finished uploading %s pages to "%s" (https://shreddr.captricity.com/admin/shreddr/job/%s/)\n' % (len(uploaded_isets), self.job_name, self.job_id)
 
@@ -153,14 +155,17 @@ class UploadTracker(object):
         difference = uploaded_iset_name_set - expected_iset_name_set
         assert len(difference) == 0, 'Difference: %s' % difference
 
-    def _get_total_pdf_page_count(self):
+    def _get_total_pdf_page_count(self, sanity=False):
         pdf_dir = os.path.split(self.full_path)[0]
         total_count = 0
         for file_name in os.listdir(pdf_dir):
             if not file_name.endswith('.pdf'):
                 continue
             pdf_file_path = os.path.join(pdf_dir, file_name)
-            total_count += self._get_pdf_file_page_count(pdf_file_path)
+            page_count = self._get_pdf_file_page_count(pdf_file_path)
+            if sanity:
+                print '\t\t%s: %s pages.  https://shreddr.captricity.com/admin/shreddr/instance/?instance_set__job__id__exact=%s&p=%s' % (pdf_file_path, page_count, self.job_id, total_count/10)
+            total_count += page_count
         return total_count
 
     def _get_pdf_file_page_count(self, pdf_file_path):
