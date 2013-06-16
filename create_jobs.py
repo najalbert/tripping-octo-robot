@@ -77,11 +77,11 @@ class UploadTracker(object):
 
     @property
     def job_name(self):
-        return 'IPA ' + os.path.basname(os.path.split(self.full_path)[0])
+        return 'IPA ' + os.path.basename(os.path.split(self.full_path)[0])
 
     @property
     def job_uploading_name(self):
-        self.job_name + ' UPLOADING; NOT READY YET'
+        return self.job_name + ' UPLOADING; NOT READY YET'
 
     def initialize_captricity_client(self):
         self.client = Client(self.api_token)
@@ -91,8 +91,8 @@ class UploadTracker(object):
             self.save()
             return
         job = self.client.create_jobs({'document_id': self.DOCUMENT_ID})
-        self._update_job_name(self.job_uploading_name)
         self.data[self.JOB_ID_KEY] = job.get('id')
+        self._update_job_name(self.job_uploading_name)
         self.save()
 
     def print_job_info(self):
@@ -145,8 +145,8 @@ class UploadTracker(object):
         # We assume the bigger files are the page we want
         even_dir = os.path.join(pdf_images_path, 'even-pages')
         odd_dir = os.path.join(pdf_images_path, 'odd-pages')
-        assert os.path.isfile(even_dir)
-        assert os.path.isfile(odd_dir)
+        assert os.path.isdir(even_dir), 'Not a directory: %s' % even_dir
+        assert os.path.isdir(odd_dir), 'Not a directory: %s' % odd_dir
         even_files = os.listdir(even_dir)
         odd_files = os.listdir(odd_dir)
         even_files = [os.path.join(pdf_images_path, 'even-pages', f) for f in even_files]
