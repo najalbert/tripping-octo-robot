@@ -33,7 +33,7 @@ class UploadTracker(object):
     UPLOAD_TRACKER_NAME = 'captricity-upload-status'
     JOB_ID_KEY = 'job_id'
     UPLOADED_INSTANCES_KEY = 'uploaded_instances'
-    DOCUMENT_ID = 'wtf'
+    DOCUMENT_ID = '10145'
     UPLOADS_DONE_NAME = 'captricity-upload-done'
 
     def __init__(self, full_path):
@@ -91,12 +91,19 @@ class UploadTracker(object):
     def continue_uploads(self):
         assert self.job_id is not None
         image_path = self._get_next_image_upload_path()
+        existing_isets = { iset['name']:iset['id']
+                           for iset in self.client.read_instance_sets(self.job_id) }
         while image_path is not None:
-            iset = self.client.create_instance_sets(self.job_id, {'name':os.path.basename(image_path)})
-            assert len(self.client.read_instance_set_instances(iset['id'])) == 0
-            instance_data = {'page_number':'0', 'image_file':open(image_path, 'rb')}
-            self.client.create_instance_set_instances(iset['id'], instance_data)
-            assert len(self.client.read_instance_set_instances(iset['id'])) == 1
+            iset_name = os.path.basename(image_path)
+            if iset_name not in existing_isets:
+                iset = self.client.create_instance_sets(self.job_id, {'name':iset_name})
+                iset_id = iset['id']
+                assert len(self.client.read_instance_set_instances(iset_id)) == 0
+                instance_data = {'page_number':'0', 'image_file':open(image_path, 'rb')}
+                self.client.create_instance_set_instances(iset_id, instance_data)
+            else:
+                iset_id = existing_isets[iset_name]
+            assert len(self.client.read_instance_set_instances(iset_id)) == 1, 'Problem with InstanceSet %s' % iset_id
             self.uploaded_instances.append(image_path)
             self.save()
             image_path = self._get_next_image_upload_path()
@@ -112,18 +119,26 @@ class UploadTracker(object):
         return None
 
     def _get_all_image_full_paths(self):
+        all_images = []
+        for pdf_file_name in os.listdir(self.full_path):
+            pdf_images_path = os.path.join(self.full_path, pdf_file_name)
+            if not os.path.isdir(pdf_images_path):
+                continue
+            all_images.extend(self._get_pdf_image_full_paths(pdf_images_path))
+        return all_images
+
+    def _get_pdf_image_full_paths(self, pdf_images_path):
         # We assume the bigger files are the page we want
-        even_dir = os.path.join(self.full_path, 'even-pages')
-        odd_dir = os.path.join(self.full_path, 'odd-pages')
+        even_dir = os.path.join(pdf_images_path, 'even-pages')
+        odd_dir = os.path.join(pdf_images_path, 'odd-pages')
         assert os.path.isfile(even_dir)
         assert os.path.isfile(odd_dir)
         even_files = os.listdir(even_dir)
         odd_files = os.listdir(odd_dir)
-        even_files = [os.path.join(self.full_path, 'even-pages', f) for f in even_files]
-        odd_files = [os.path.join(self.full_path, 'odd-pages', f) for f in odd_files]
+        even_files = [os.path.join(pdf_images_path, 'even-pages', f) for f in even_files]
+        odd_files = [os.path.join(pdf_images_path, 'odd-pages', f) for f in odd_files]
         if len(odd_files) == 0 or len(even_files) == 0:
             return []
-
         even_file_sizes = [os.path.getsize(f) for f in even_files]
         odd_file_sizes = [os.path.getsize(f) for f in odd_files]
         FUDGE_FACTOR = 50000 # expect 50kb avg difference, otherwise raise error
@@ -133,7 +148,7 @@ class UploadTracker(object):
             return even_files
         elif avg_odd_size - FUDGE_FACTOR > avg_even_size:
             return odd_files
-        raise Exception('Could not distinguish files: %s' % self.full_path)
+        raise Exception('Could not distinguish files: %s' % pdf_images_path)
 
     def save(self):
         fout = open(self.upload_tracker_file, 'w')
