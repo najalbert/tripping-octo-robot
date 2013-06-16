@@ -4,6 +4,7 @@ upload the first page of each converted IPA document to Captricity.
 '''
 import os
 import pickle
+import subprocess
 
 # You'll need to install the Captricity API client
 # https://github.com/Captricity/captools
@@ -29,6 +30,7 @@ def upload_images_to_job(full_path):
     upload_tracker.create_captricity_job()
     upload_tracker.print_job_info()
     upload_tracker.continue_uploads()
+    upload_tracker.print_finished_upload_info()
 
 def _all_pdfs_converted(full_path):
     for pdf_file_name in os.listdir(full_path):
@@ -77,7 +79,7 @@ class UploadTracker(object):
 
     @property
     def job_name(self):
-        return 'IPA ' + os.path.basename(os.path.split(self.full_path)[0])
+        return 'IPA - ' + os.path.basename(os.path.split(self.full_path)[0])
 
     @property
     def job_uploading_name(self):
@@ -98,6 +100,10 @@ class UploadTracker(object):
     def print_job_info(self):
         print 'Uploading to "%s" (https://shreddr.captricity.com/admin/shreddr/job/%s/)' % (self.job_name, self.job_id)
 
+    def print_finished_upload_info(self):
+        uploaded_isets = self.client.read_instance_sets(self.job_id)
+        print 'Finished uploading %s pages to "%s" (https://shreddr.captricity.com/admin/shreddr/job/%s/)\n' % (len(uploaded_isets), self.job_name, self.job_id)
+
     def _update_job_name(self, name):
         self.client.update_job(self.job_id, {'name': name})
 
@@ -111,7 +117,7 @@ class UploadTracker(object):
             if iset_name not in existing_isets:
                 iset = self.client.create_instance_sets(self.job_id, {'name':iset_name})
                 iset_id = iset['id']
-                print 'Uploading %s to Job %s as InstanceSet %s (https://shreddr.captricity.com/admin/shreddr/instanceset/%s/)' % (image_path, self.job_id, iset_name, iset_id)
+                print '\tUploading %s to Job %s as InstanceSet %s (https://shreddr.captricity.com/admin/shreddr/instanceset/%s/)' % (image_path, self.job_id, iset_name, iset_id)
                 assert len(self.client.read_instance_set_instances(iset_id)) == 0
                 instance_data = {'page_number':'0', 'image_file':open(image_path, 'rb')}
                 self.client.create_instance_set_instances(iset_id, instance_data)
@@ -121,9 +127,49 @@ class UploadTracker(object):
             self.uploaded_instances.append(image_path)
             self.save()
             image_path = self._get_next_image_upload_path()
+        self._sanity_check()
         self._update_job_name(self.job_name)
         self.data[self.UPLOADS_DONE_NAME] = True
         self.save()
+
+    def _sanity_check(self):
+        image_paths = self._get_all_image_full_paths()
+        uploaded_isets = self.client.read_instance_sets(self.job_id)
+        total_pages = self._get_total_pdf_page_count()
+        assert total_pages/2.0 == len(uploaded_isets), 'Unexpected page counts: %s vs %s' % (total_pages/2.0, len(uploaded_isets))
+        uploaded_iset_names = [iset['name'] for iset in uploaded_isets]
+        expected_iset_names = [os.path.basename(image_path) for image_path in image_paths]
+        uploaded_iset_name_set = set(uploaded_iset_names)
+        expected_iset_name_set = set(expected_iset_names)
+        assert len(uploaded_iset_names) == len(uploaded_iset_name_set), 'Not all uploaded iset names were unique!'
+        assert len(expected_iset_names) == len(expected_iset_name_set), 'Not all expected iset names were unique!'
+        assert len(uploaded_iset_names) == len(expected_iset_names), 'Different numbers of uploaded and expected isets: %s vs %s' % (len(uploaded_iset_names), len(expected_iset_names))
+        difference = expected_iset_name_set - uploaded_iset_name_set
+        assert len(difference) == 0, 'Difference: %s' % difference
+        difference = uploaded_iset_name_set - expected_iset_name_set
+        assert len(difference) == 0, 'Difference: %s' % difference
+
+    def _get_total_pdf_page_count(self):
+        pdf_dir = os.path.split(self.full_path)[0]
+        total_count = 0
+        for file_name in os.listdir(pdf_dir):
+            if not file_name.endswith('.pdf'):
+                continue
+            pdf_file_path = os.path.join(pdf_dir, file_name)
+            total_count += self._get_pdf_file_page_count(pdf_file_path)
+        return total_count
+
+    def _get_pdf_file_page_count(self, pdf_file_path):
+        pdfinfo_output = subprocess.check_output(['pdfinfo', pdf_file_path])
+        num_pages = None
+        for tok in pdfinfo_output.split('\n'):
+            if tok.find('Pages') < 0: continue
+            num_pages_str = tok[tok.find(':')+1:].strip() # it should always reach here
+            if num_pages_str.isdigit():
+                num_pages = int(num_pages_str)
+                break
+        assert num_pages is not None
+        return num_pages
 
     def _get_next_image_upload_path(self):
         all_image_paths = self._get_all_image_full_paths()
