@@ -70,17 +70,27 @@ def sanity_check_image_dir(upload_tracker, pdf_image_dir, fout):
     else:
         raise Exception('No size winner: %s' % even_dir)
 
-    p1_min = min([t for t in p1_files_and_sizes], key=lambda x: x[1])
-    p2_max = max([t for t in p2_files_and_sizes], key=lambda x: x[1])
-
-    if (p1_min[1] - upload_tracker.FILE_SIZE_DIFFERENTIAL) > p2_max[1]:
-        return
+    def file_size_spread(p1_files_and_sizes, p2_files_and_sizes, suspects):
+        p1_sizes = [t for t in p1_files_and_sizes if t not in suspects]
+        if len(p1_sizes) == 0:
+            # All p1s were manually reviewed, return a big number
+            return 9999999999
+        p1_min = min(p1_sizes, key=lambda x: x[1])
+        p2_max = max([t for t in p2_files_and_sizes if t not in suspects], key=lambda x: x[1])
+        return p1_min[1] - p2_max[1]
 
     suspects = []
     first = True
+    if file_size_spread(p1_files_and_sizes, p2_files_and_sizes, suspects) > upload_tracker.FILE_SIZE_DIFFERENTIAL:
+        return
 
-    for path, size in p1_files_and_sizes:
-        if size < 1260000:
+    SANITY_LARGE = 1200000
+    SANITY_SMALL = SANITY_LARGE - upload_tracker.FILE_SIZE_DIFFERENTIAL - 1024
+
+    for path, size in sorted(p1_files_and_sizes, key=lambda x:x[1]):
+        if file_size_spread(p1_files_and_sizes, p2_files_and_sizes, suspects) > upload_tracker.FILE_SIZE_DIFFERENTIAL:
+            break
+        if size < SANITY_LARGE:
             if first:
                 while raw_input('Reviewing small P1s... [c]') != 'c':
                     pass
@@ -97,9 +107,13 @@ def sanity_check_image_dir(upload_tracker, pdf_image_dir, fout):
                     print 'BROKEN: %s' % path
                     break
 
+
+
     first = True
-    for path, size in p2_files_and_sizes:
-        if size > 740000:
+    for path, size in sorted(p2_files_and_sizes, key=lambda x:-x[1]):
+        if file_size_spread(p1_files_and_sizes, p2_files_and_sizes, suspects) > upload_tracker.FILE_SIZE_DIFFERENTIAL:
+            break
+        if size > SANITY_SMALL:
             if first:
                 while raw_input('Reviewing large P2s... [c]') != 'c':
                     pass
@@ -115,6 +129,11 @@ def sanity_check_image_dir(upload_tracker, pdf_image_dir, fout):
                 elif 'n' in answer:
                     print 'BROKEN: %s' % path
                     break
+
+    p1_sizes = [t for t in p1_files_and_sizes if t not in suspects]
+    if len(p1_sizes) == 0:
+        # All p1s were reviewed
+        return 
     p1_min = min([t for t in p1_files_and_sizes if t not in suspects], key=lambda x: x[1])
     p2_max = max([t for t in p2_files_and_sizes if t not in suspects], key=lambda x: x[1])
 
