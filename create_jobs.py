@@ -55,6 +55,14 @@ class UploadTracker(object):
             '/Users/nickj/IPA-data/Baringo/161_Mogotio_A.pdf': 64, # Starts with an extra p2, 27 and 28 are p2s
             # Bungoma
             '/Users/nickj/IPA-data/Bungoma/222_Webuye West.pdf': 0, # PDF file is corrupt
+            '/Users/nickj/IPA-data/Kitui/070_Kitui West_A.pdf': 156, # 2x page count, only p1s were scanned
+            '/Users/nickj/IPA-data/Kitui/070_Kitui West_B.pdf': 102, # 2x page count, only p1s were scanned
+            '/Users/nickj/IPA-data/Kitui/072_Kitui Central_A.pdf': 46, # 2x page count, only p1s were scanned
+            '/Users/nickj/IPA-data/Kitui/072_Kitui Central_B.pdf': 110, # 2x page count, only p1s were scanned
+            '/Users/nickj/IPA-data/Kitui/072_Kitui Central_C.pdf': 70, # 2x page count, only p1s were scanned
+            '/Users/nickj/IPA-data/Laikipia/163_Laikipia West_A.pdf': 160, # double scanned p2
+
+            '/Users/nickj/IPA-data/Vihiga/212_Sabatia.pdf': 0, # PDF file is corrupt
     }
 
     # Lists of files to ignore when doing file size sanity checks.
