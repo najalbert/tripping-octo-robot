@@ -38,7 +38,8 @@ def sanity_check_jobs(upload_tracker):
     fout = open(output_file_path, 'w')
     for pdf_image_dir_name in os.listdir(upload_tracker.full_path):
         pdf_image_dir = os.path.join(upload_tracker.full_path, pdf_image_dir_name)
-        assert os.path.isdir(pdf_image_dir)
+        if not os.path.isdir(pdf_image_dir):
+            continue
         sanity_check_image_dir(upload_tracker, pdf_image_dir, fout)
     fout.close()
 
@@ -69,11 +70,21 @@ def sanity_check_image_dir(upload_tracker, pdf_image_dir, fout):
     else:
         raise Exception('No size winner: %s' % even_dir)
 
+    p1_min = min([t for t in p1_files_and_sizes], key=lambda x: x[1])
+    p2_max = max([t for t in p2_files_and_sizes], key=lambda x: x[1])
+
+    if (p1_min[1] - upload_tracker.FILE_SIZE_DIFFERENTIAL) > p2_max[1]:
+        return
+
     suspects = []
-    while raw_input('Reviewing small P1s... [c]') != 'c':
-        pass
+    first = True
+
     for path, size in p1_files_and_sizes:
         if size < 1260000:
+            if first:
+                while raw_input('Reviewing small P1s... [c]') != 'c':
+                    pass
+                first = False
             subprocess.check_output(['open', '-g', path])
             print 'P1 size: %s, File: %s' % (size,path)
             while True:
@@ -83,13 +94,16 @@ def sanity_check_image_dir(upload_tracker, pdf_image_dir, fout):
                     fout.write("            '%s',\n" % path)
                     break
                 elif 'n' in answer:
-                    print 'BONED: %s' % path
+                    print 'BROKEN: %s' % path
                     break
 
-    while raw_input('Reviewing large P2s... [c]') != 'c':
-        pass
+    first = True
     for path, size in p2_files_and_sizes:
         if size > 740000:
+            if first:
+                while raw_input('Reviewing large P2s... [c]') != 'c':
+                    pass
+                first = False
             subprocess.check_output(['open', '-g', path])
             print 'P2 size: %s, File: %s' % (size,path)
             while True:
@@ -99,7 +113,7 @@ def sanity_check_image_dir(upload_tracker, pdf_image_dir, fout):
                     fout.write("            '%s',\n" % path)
                     break
                 elif 'n' in answer:
-                    print 'BONED: %s' % path
+                    print 'BROKEN: %s' % path
                     break
     p1_min = min([t for t in p1_files_and_sizes if t not in suspects], key=lambda x: x[1])
     p2_max = max([t for t in p2_files_and_sizes if t not in suspects], key=lambda x: x[1])
