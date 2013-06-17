@@ -47,6 +47,7 @@ class UploadTracker(object):
     UPLOADED_INSTANCES_KEY = 'uploaded_instances'
     DOCUMENT_ID = '10145'
     UPLOADS_DONE_NAME = 'captricity-upload-done'
+    FILE_SIZE_DIFFERENTIAL = 2**19
     # For messed up scans, specify the page count for sanity checks
     MODIFIED_PDF_PAGE_COUNTS = {
             # Baringo
@@ -117,7 +118,7 @@ class UploadTracker(object):
             '/Users/nickj/IPA-data/Busia/images/230_Funyula_C.pdf/odd-pages/230_Funyula_C.pdf-page-57.png',
     ]
 
-    def __init__(self, full_path):
+    def __init__(self, full_path, quick_init=False):
         self.full_path = full_path
         if os.path.isfile(self.upload_tracker_file):
             self.data = pickle.load(open(self.upload_tracker_file))
@@ -126,7 +127,8 @@ class UploadTracker(object):
         self.data.setdefault(self.UPLOADED_INSTANCES_KEY, [])
         self.data.setdefault(self.JOB_ID_KEY, None)
         self.data.setdefault(self.UPLOADS_DONE_NAME, False)
-        self.initialize_captricity_client()
+        if not quick_init:
+            self.initialize_captricity_client()
 
     @property
     def upload_tracker_file(self):
@@ -287,12 +289,12 @@ class UploadTracker(object):
         if avg_even_size > avg_odd_size:
             # Should be atleast 512kb different between smallest first page and largest second
             # See Baringo/161_Mogotio_A.pdf missort
-            assert min(even_file_sizes) > (max(odd_file_sizes) + 2**19), 'Suspect size differential: %s' % even_dir
+            assert min(even_file_sizes) > (max(odd_file_sizes) + self.FILE_SIZE_DIFFERENTIAL), 'Suspect size differential: %s' % even_dir
             return even_files
         elif avg_odd_size > avg_even_size:
             # Should be atleast 512kb different between smallest first page and largest second
             # See Baringo/161_Mogotio_A.pdf missort
-            assert min(odd_file_sizes) > (max(even_file_sizes) + 2**19), 'Suspect size differential: %s' % odd_dir
+            assert min(odd_file_sizes) > (max(even_file_sizes) + self.FILE_SIZE_DIFFERENTIAL), 'Suspect size differential: %s' % odd_dir
             return odd_files
         raise Exception('Could not distinguish files: %s' % pdf_images_path)
 
