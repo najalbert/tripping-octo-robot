@@ -27,6 +27,8 @@ def upload_images_to_job(full_path):
         print 'Folder %s has not finished PDF conversion, skipping!' % full_path
         return
     upload_tracker = UploadTracker(full_path)
+    if upload_tracker.all_uploads_done:
+        return
     upload_tracker.create_captricity_job()
     upload_tracker.print_job_info()
     upload_tracker.continue_uploads()
