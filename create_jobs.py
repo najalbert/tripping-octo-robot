@@ -814,6 +814,10 @@ class UploadTracker(object):
     def job_uploading_name(self):
         return self.job_name + ' UPLOADING; NOT READY YET'
 
+    @property
+    def all_uploads_done(self):
+        return self.data.get(self.UPLOADS_DONE_NAME, False)
+
     def initialize_captricity_client(self):
         self.client = Client(self.api_token)
 
