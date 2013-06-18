@@ -49,7 +49,7 @@ class UploadTracker(object):
     UPLOADED_INSTANCES_KEY = 'uploaded_instances'
     DOCUMENT_ID = '10145'
     UPLOADS_DONE_NAME = 'captricity-upload-done'
-    FILE_SIZE_DIFFERENTIAL = 2**19
+    FILE_SIZE_DIFFERENTIAL = 400000
     # For messed up scans, specify the page count for sanity checks
     MODIFIED_PDF_PAGE_COUNTS = {
             # Baringo
@@ -407,7 +407,7 @@ class UploadTracker(object):
             '/Users/nickj/IPA-data/Kwale/images/008_Lunga Lunga_A.pdf/odd-pages/008_Lunga Lunga_A.pdf-page-15.png',
 
             # Laikipia
-            '/Users/nickj/IPA-data/Laikipia/images/165_Laikipia North_B.pdf/odd-pages/165_Laikipia North_B.pdf-page-1.png',
+            #'/Users/nickj/IPA-data/Laikipia/images/165_Laikipia North_B.pdf/odd-pages/165_Laikipia North_B.pdf-page-1.png',
 
             # Makueni
             '/Users/nickj/IPA-data/Makueni/images/083_Mbooni_A.pdf/even-pages/083_Mbooni_A.pdf-page-132.png',
